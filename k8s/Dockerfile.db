@@ -1,0 +1,5 @@
+FROM mongo:4.4
+
+ADD k8s/init-mongo.js /docker-entrypoint-initdb.c
+
+EXPOSE 27017
