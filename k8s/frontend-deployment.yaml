@@ -1,0 +1,132 @@
+# kubectl apply -f ../k8s/frontend-deployment.yaml 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deliveries-frontend-deployment
+  namespace: egs2
+spec:
+  selector:
+    matchLabels:
+      app: deliveries-frontend-deployment
+  replicas: 1 
+  template:
+    metadata:
+      labels:
+        app: deliveries-frontend-deployment
+    spec:
+      containers:
+      - name: deliveries-frontend-deployment
+        image: registry.deti:5000/egs2/deliveries_frontend:final
+        ports:
+        - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deliveries-frontend-service
+  namespace: egs2
+spec:
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000  
+  selector:
+    app: deliveries-frontend-deployment
+  type: NodePort
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deliveries-frontend-ingress
+  namespace: egs2
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/frontend-entry-points: http,https
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
+spec:
+  rules:
+  - host: transportes-beira-mar.k3s
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: deliveries-frontend-service
+            port: 
+              number: 3000
+      - path: /*
+        pathType: Prefix
+        backend:
+          service:
+            name: deliveries-frontend-service
+            port:
+              number: 3000
+---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: nginx
+#   namespace: gui
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: nginx
+#   strategy: {}
+#   template:
+#     metadata:
+#       labels:
+#         app: nginx
+#     spec:
+#       containers:
+#         - image: registry.deti:5000/gui/nginx-proxy:200622v3
+#           name: nginx
+#           ports:
+#             - containerPort: 3000
+#           resources: {}
+#       restartPolicy: Always 
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: nginx
+#   namespace: gui
+# spec:
+#   ports:
+#   - port: 3000
+#     targetPort: 3000
+#   selector:
+#     app: nginx
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: traefik
+#   namespace: gui
+#   annotations:
+#     kubernetes.io/ingress.class: traefik
+#     traefik.ingress.kubernetes.io/frontend-entry-points: http,https
+#     traefik.ingress.kubernetes.io/redirect-entry-point: https
+#     traefik.ingress.kubernetes.io/redirect-permanent: "true"
+# spec:
+#   rules:
+#   - host: transportes-beira-mar.k3s
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: nginx
+#             port: 
+#               number: 3000
+#       - path: /package=:trackingNumber
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: nginx
+#             port: 
+#               number: 3000

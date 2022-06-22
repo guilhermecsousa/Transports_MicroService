@@ -1,0 +1,59 @@
+# kubectl apply -f ../k8s/backend-deployment.yaml 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deliveries-backend-deployment
+  namespace: egs2
+spec:
+  selector:
+    matchLabels:
+      app: deliveries-backend-deployment
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: deliveries-backend-deployment
+    spec:
+      containers:
+      - name: deliveries-backend-deployment
+        image: registry.deti:5000/egs2/deliveries_backend:finalv1
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deliveries-backend-service
+  namespace: egs2
+spec:
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000  
+  selector:
+    app: deliveries-backend-deployment
+  type: NodePort
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deliveries-backend-ingress
+  namespace: egs2
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/frontend-entry-points: http,https
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
+spec:
+  rules:
+  - host: deliveries-backend.k3s
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: deliveries-backend-service
+            port: 
+              number: 8000

@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deliveries-mongodb-deployment
+  namespace: egs2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: deliveries-mongodb
+        image: registry.deti:5000/egs2/deliveries_mongo_deployment:final
+        ports: 
+        - containerPort: 27017
+        env:         
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom: 
+            secretKeyRef:
+              name: deliveries-mongodb-secret
+              key: mongo-root-username
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: deliveries-mongodb-secret
+              key: mongo-root-password
+      volumes:
+        - name: deliveries-mongodb-persitent-storage
+          persistentVolumeClaim:
+            claimName: mongodb-pv-deliveries
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deliveries-mongodb-service
+  namespace: egs2
+spec:
+  selector:
+    app: mongodb
+  ports:
+    - protocol: TCP              
+      port: 27017
+      targetPort: 27017
